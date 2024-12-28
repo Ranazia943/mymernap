@@ -6,142 +6,141 @@ import axios from 'axios';
 
 const Home = () => {
   const { setAuthUser } = useAuthContext();
-  const [Teamdata, setTeamData] = useState(null); // State to store fetched user data
+  const [Teamdata, setTeamData] = useState(null);
   const [plans, setPlans] = useState([]);
   const [withdrawalHistory, setWithdrawalHistory] = useState([]);
-  const [loading, setLoading] = useState(true); // Loading state
-  const { authUser } = useAuthContext(); // Authenticated user data from context
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Error state
+  const { authUser } = useAuthContext();
 
   const navigate = useNavigate();
 
   const logout = () => {
     try {
-      // Clear user and token from localStorage
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-
-      // Set authUser to null
       setAuthUser(null);
-
-      // Show success toast notification
-      toast.success("Logout successful! You have been logged out.", {
-        duration: 1000, // 1 second
-      });
-
-      // Redirect to login page
+      toast.success("Logout successful!", { duration: 1000 });
       navigate("/login");
     } catch (error) {
       toast.error("An error occurred during logout.");
     }
   };
 
-
-   useEffect(() => {
-      if (authUser) {
-        const fetchTeamData = async () => {
-          try {
-            const token = authUser.token || localStorage.getItem("token");
-  
-            if (!token) {
-              console.error("No token found, authorization denied.");
-              return;
-            }
-  
-            const response = await fetch(`http://localhost:5000/api/userplan/user/${authUser._id}`, {
+  useEffect(() => {
+    if (authUser) {
+      const fetchTeamData = async () => {
+        try {
+          const token = authUser.token || localStorage.getItem("token");
+          if (!token) throw new Error("No token found, authorization denied.");
+          const baseURL = import.meta.env.VITE_API_BASE_URL;
+          
+          const response = await fetch(`${baseURL}/api/userplan/user/${authUser._id}`,
+            {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
-                
+                Authorization: `Bearer ${token}`,
               },
-            });
-  
-            const data = await response.json();
-            console.log("API Response:", data);  // Log the response for debugging
-  
-            if (response.ok) {
-              setTeamData(data);  // Save the complete data in the state
-              setLoading(false);  // Set loading to false once data is fetched
-            } else {
-              console.error(data.message);
-              setLoading(false);
             }
-          } catch (error) {
-            console.error("Error fetching team data:", error);
+          );
+
+          const data = await response.json();
+          console.log("API Response:", data);
+
+          if (response.ok) {
+            setTeamData(data);
             setLoading(false);
+          } else {
+            throw new Error(data.message || "Failed to fetch team data.");
           }
-        };
-  
-        fetchTeamData();
-      }
-    }, [authUser]);
-    useEffect(() => {
-      const fetchPlans = async () => {
-        try {
-          const response = await axios.get('http://localhost:5000/api/plan/all'); // Replace with your backend URL
-          setPlans(response.data.plans);
-          setLoading(false);
         } catch (error) {
-          setError('Failed to fetch plans');
+          console.error("Error fetching team data:", error);
+          setError(error.message);
           setLoading(false);
         }
       };
-  
-      fetchPlans();
-    }, []);
-  
-    useEffect(() => {
-      if (authUser) {
-        const fetchWithdrawalHistory = async () => {
-          try {
-            const token = authUser.token || localStorage.getItem("token");
-  
-            if (!token) {
-              console.error("No token found, authorization denied.");
-              return;
-            }
-  
-            const response = await axios.get(
-              `http://localhost:5000/api/withdrawl/${authUser._id}`,
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-  
-            if (response.data) {
-              console.log("Withdrawal History Data:", response.data); // Log data for debugging
-              setWithdrawalHistory(response.data.data);
-              setLoading(false);
-            } else {
-              setLoading(false);
-              console.error("Error: No data found.");
-            }
-          } catch (error) {
-            console.error("Error fetching withdrawal history:", error);
-            setLoading(false);
-          }
-        };
-  
-        fetchWithdrawalHistory();
-      }
-    }, [authUser]);
-    const totalWithdrawn = withdrawalHistory.reduce((total, withdrawal) => {
-      return total + withdrawal.amount;
-    }, 0);  
-    if (loading) {
-      return <div>Loading...</div>;
-    }
-  
-    // If there's an issue with authUser or userData
-    if (!Teamdata) {
-      return <div>Error loading user data.</div>;
-    }
-  
-    const { totalBalance } = Teamdata;
-  
 
+      fetchTeamData();
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+        const response = await axios.get(`${baseURL}/api/plan/all`);
+        setPlans(response.data.plans);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+        setError("Failed to fetch plans");
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  useEffect(() => {
+    if (authUser) {
+      const fetchWithdrawalHistory = async () => {
+        try {
+          const token = authUser.token || localStorage.getItem("token");
+          if (!token) throw new Error("No token found, authorization denied.");
+          const baseURL = import.meta.env.VITE_API_BASE_URL;
+  
+          const response = await axios.get(`${baseURL}/api/withdrawl/${authUser._id}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+  
+          console.log("Withdrawal History Data:", response.data);
+  
+          // Check if data is available, otherwise, set empty array
+          if (response.data && response.data.data) {
+            setWithdrawalHistory(response.data.data);
+          } else {
+            setWithdrawalHistory([]); // Set empty array if no data
+          }
+  
+          setLoading(false); // Set loading to false after data is fetched
+  
+        } catch (error) {
+          // Handle error by setting empty array and not showing error message
+          console.error("Error fetching withdrawal history:", error);
+          setWithdrawalHistory([]); // Set withdrawal history to empty array
+          setLoading(false); // Set loading to false
+        }
+      };
+  
+      fetchWithdrawalHistory();
+    }
+  }, [authUser]);
+  
+  const totalWithdrawn = withdrawalHistory
+    .filter((withdrawal) => withdrawal.status === "completed") // Filter out pending withdrawals
+    .reduce((total, withdrawal) => total + withdrawal.amount, 0);
+
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!Teamdata) {
+    return <div>Error loading user data.</div>;
+  }
+
+  const { totalBalance } = Teamdata;
+
+  
   return (
     <div className="bg-[#f9f9f9] min-h-screen">
       <div className="wrapper">
@@ -318,9 +317,11 @@ const Home = () => {
                 </p>
               </div>
               <div>
+                <Link to="/addamount">
                 <button className="px-4 py-2 text-lg font-[500] bg-green-500 rounded-md text-white group-hover:bg-green-600 duration-300">
                   Buy Plan
                 </button>
+                </Link>
               </div>
             </div>
           </div>

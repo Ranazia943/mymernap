@@ -17,10 +17,10 @@ const TotalPlan = () => {
             console.error("No token found, authorization denied.");
             return;
           }
-
-          const response = await fetch(`http://localhost:5000/api/userplan/user/${authUser._id}`, {
+          const baseURL = import.meta.env.VITE_API_BASE_URL;
+          const response = await fetch(`${baseURL}/api/userplan/user/${authUser._id}`, {
             method: "GET",
-            headers: {
+            headers: { 
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`,
             },

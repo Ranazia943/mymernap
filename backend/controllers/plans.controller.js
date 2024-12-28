@@ -53,45 +53,6 @@ export const fetchAllPlans = async (req, res) => {
 };
 
 
-export const updatePlan = async (req, res) => {
-  const { id } = req.params;
-  const { name, price, duration, dailyProfit, totalProfit, paymentMethod, startDate, endDate } = req.body;
-
-  try {
-    // If no endDate is provided, calculate it based on the startDate and duration
-    const calculatedEndDate = endDate ? new Date(endDate) : new Date(startDate);
-    calculatedEndDate.setDate(calculatedEndDate.getDate() + duration);
-
-    const updatedPlan = await Plan.findByIdAndUpdate(
-      id,
-      {
-        name,
-        price,
-        duration,
-        dailyProfit,
-        totalProfit,
-        paymentMethod,
-        startDate: new Date(startDate),  // Ensure start date is a valid date
-        endDate: calculatedEndDate,       // Use calculated or provided end date
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedPlan) {
-      return res.status(404).json({ message: "Plan not found." });
-    }
-
-    res.status(200).json({
-      message: "Plan updated successfully.",
-      plan: updatedPlan,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error updating plan.",
-      error: error.message,
-    });
-  }
-};
 
 // Delete a Plan
 export const deletePlan = async (req, res) => {

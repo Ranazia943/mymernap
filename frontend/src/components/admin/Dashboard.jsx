@@ -24,7 +24,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Fetch the data from the backend API
-    fetch('http://localhost:5000/api/data/user-statistics')
+    const baseURL = import.meta.env.VITE_API_BASE_URL;
+    fetch(`${baseURL}/api/data/user-statistics`)
       .then((response) => response.json())
       .then((data) => setStats(data))
       .catch((error) => console.error('Error fetching stats:', error));
@@ -155,7 +156,7 @@ const Dashboard = () => {
                   <p className="text-lg font-[400] ">{stats.totalInvests}</p>
                 </div>
                 <div className="text-center bg-white py-4 rounded-lg border shadow-md hover:-translate-y-2 duration-300 hover:shadow-xl">
-                  <h2 className="text-base lg:text-xl font-[600]">Total Plans</h2>
+                  <h2 className="text-base lg:text-xl font-[600]">Purchased Plans</h2>
                   <p className="text-lg font-[400] ">{stats.totalPlans}</p>
                 </div>
                 <div className="text-center bg-white py-4 rounded-lg border shadow-md hover:-translate-y-2 duration-300 hover:shadow-xl">

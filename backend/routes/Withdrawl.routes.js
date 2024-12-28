@@ -3,7 +3,7 @@ import {
   sendWithdrawalRequest,
   respondToWithdrawalRequest,
   fetchAllWithdrawalRequests,
-  fetchWithdrawalRequestByUserId,
+  fetchWithdrawalRequestByUserId,getNotifications,deleteNotificationById
 } from '../controllers/WithdrawController.js';
 import protect from '../utils/protectroute.js';
 
@@ -20,5 +20,7 @@ router.get('/all', fetchAllWithdrawalRequests);
 
 // Fetch a specific withdrawal request by ID
 router.get('/:userId', fetchWithdrawalRequestByUserId);
+router.get('/notifications/:userId', getNotifications);
+router.delete('/notifications/:notificationId', deleteNotificationById);
 
 export default router;

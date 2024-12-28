@@ -49,7 +49,8 @@ const Add_Plan = () => {
       };
     
       try {
-        const response = await fetch("http://localhost:5000/api/plan/add", {
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+        const response = await fetch(`${baseURL}/api/plan/add`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -49,7 +49,9 @@ const handlePurchase = async (e) => {
   }
 
   try {
-    const response = await axios.post("http://localhost:5000/api/userplan/purchase", {
+    const baseURL = import.meta.env.VITE_API_BASE_URL;
+  
+    const response = await axios.post(`${baseURL}/api/userplan/purchase`, {
       userId: authUser._id,  // Pass the user ID from the AuthContext
       planId: plan._id,
       paymentGateway: paymentMethod,

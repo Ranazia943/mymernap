@@ -9,7 +9,8 @@ const UserDetail = () => {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/userplan/${id}`);
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${baseURL}/api/userplan/${id}`);
         setUserDetails(response.data);
       } catch (error) {
         console.error("Error fetching user details:", error);

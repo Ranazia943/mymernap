@@ -50,8 +50,8 @@ const WithdrawRequest = () => {
       console.log("Sending withdrawal request with data:", requestData);
 
       // Send the request to the backend with token in the Authorization header
-      const response = await axios.post(
-        `http://localhost:5000/api/withdrawl/request/${authUser._id}`,
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
+      const response = await axios.post(`${baseURL}/api/withdrawl/request/${authUser._id}`,
         requestData,
         {
           headers: {

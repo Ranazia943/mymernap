@@ -79,48 +79,42 @@ export const updateEarnings = async () => {
   }
 };
 
-export const updatePlanState = async (req, res) => {
-  try {
-    // Find all user plans where the state is "pending"
-    const userPlans = await UserPlan.find({ state: 'pending' }).populate('planId');
 
-    if (!userPlans.length) {
-      return res.status(404).json({ message: 'No pending plans found' });
-    }
+  export const updatePlanState = async (req, res) => {
+    try {
+      const { planId } = req.body;  // Extract the planId from the request body
 
-    // Update the state of all pending plans to "active"
-    const updatedPlans = await UserPlan.updateMany(
-      { state: 'pending' },
-      { $set: { state: 'active' } }
-    );
+      // Find the user plan based on planId and state "pending"
+      const userPlan = await UserPlan.findOne({ planId, state: 'pending' }).populate('planId');
+      if (!userPlan) {
+        return res.status(404).json({ message: 'No pending plan found for the given planId' });
+      }
 
-    // Check if update was successful
-    if (updatedPlans.modifiedCount === 0) {
-      return res.status(400).json({ message: 'Failed to update plan states' });
-    }
+      // Update the state of the found user plan to "active"
+      userPlan.state = 'active';
+      await userPlan.save();
 
-    for (const plan of userPlans) {
       // Update the user's earnings based on daily profit
       const earnings = await Earnings.findOneAndUpdate(
-        { userId: plan.userId },
-        { $inc: { totalEarnings: plan.dailyProfit } },
+        { userId: userPlan.userId },
+        { $inc: { totalEarnings: userPlan.dailyProfit } },
         { upsert: true, new: true }
       );
 
       // Add daily earnings record
       earnings.dailyEarnings.push({
         date: new Date(),
-        amount: plan.dailyProfit,
+        amount: userPlan.dailyProfit,
       });
       await earnings.save();
 
       // Handle referral earnings (only for users who were referred)
-      const user = await User.findById(plan.userId).populate('referredBy');
+      const user = await User.findById(userPlan.userId).populate('referredBy');
       if (user?.referredBy) {
         const referrerId = user.referredBy._id;
 
         // Calculate one-time referral bonus (10% of plan price)
-        const oneTimeReferralBonus = plan.planId.price * 0.1;
+        const oneTimeReferralBonus = userPlan.planId.price * 0.1;
 
         // Add referral earnings to the referrer's account
         const referrerEarnings = await Earnings.findOneAndUpdate(
@@ -139,86 +133,86 @@ export const updatePlanState = async (req, res) => {
         // Store referral details for daily profit share
         const referralEarning = new ReferralEarnings({
           userId: referrerId,
-          referredUserId: plan.userId,
-          dailyProfitShare: plan.planId.dailyProfit * 0.1,
+          referredUserId: userPlan.userId,
+          dailyProfitShare: userPlan.planId.dailyProfit * 0.1,
         });
         await referralEarning.save();
       }
+
+      return res.status(200).json({ message: 'Plan updated to active and earnings updated' });
+    } catch (error) {
+      console.error('Error in updatePlanState:', error);
+      return res.status(500).json({ message: 'Server error' });
     }
+  };
 
-    return res.status(200).json({ message: 'All pending plans updated to active and earnings updated' });
-  } catch (error) {
-    console.error('Error in updatePlanState:', error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-
-export const getAllPurchasedPlans = async (req, res) => {
-  try {
-    // Fetch all active user plans with user details, plan information, and the payment screenshot
-    const userPlans = await UserPlan.find({})
-      .populate('userId', 'username email referredBy')  // Get user details and the referrer
-      .populate('planId', 'name price dailyProfit duration totalProfit startDate endDate')  // Explicitly get plan details
-      .exec();
-
-    if (!userPlans.length) {
-      return res.status(404).json({ message: 'No active purchased plans found.' });
+  export const getAllPurchasedPlans = async (req, res) => {
+    try {
+      // Fetch all active user plans with user details, plan information, and the payment screenshot
+      const userPlans = await UserPlan.find({})
+        .populate('userId', 'username email referredBy')  // Get user details and the referrer
+        .populate('planId', 'name price dailyProfit duration totalProfit startDate endDate')  // Explicitly get plan details
+        .exec();
+  
+      if (!userPlans.length) {
+        return res.status(404).json({ message: 'No active purchased plans found.' });
+      }
+  
+      // Iterate over user plans and prepare the response
+      const response = await Promise.all(userPlans.map(async (userPlan) => {
+        const user = userPlan.userId;
+        const plan = userPlan.planId;
+  
+        // Fetch the user's earnings for this plan
+        const userEarnings = await Earnings.findOne({ userId: user._id }) || { totalEarnings: 0, dailyEarnings: [] };
+  
+        // Fetch the referrer details (populate referredBy with username)
+        const referrer = user.referredBy ? user.referredBy.username : 'N/A';
+        const referrerName = user.referredBy ? user.referredBy.name : 'N/A';  // Assuming the referredBy has a 'name' field
+  
+        // Prepare the response for each user plan, including payment screenshot
+        return {
+          planRequestDetail: {
+            planDetail: {
+              planId: plan._id, // Include the planId
+              planName: plan.name, // Plan name
+              price: plan.price,
+              duration: plan.duration,
+              dailyProfit: plan.dailyProfit,
+              totalProfit: plan.totalProfit,
+              startDate: plan.startDate, // Plan start date
+              endDate: plan.endDate // Plan end date
+            },
+            userDetail: {
+              username: user.username,
+              referredBy: referrer,  // Referrer's username
+              referrerName: referrerName,  // Referrer's full name
+              paymentGateway: userPlan.paymentGateway, // Payment method
+              planState: userPlan.state, // Plan status (approved, pending, etc.)
+              paymentScreenshot: userPlan.paymentScreenshot, // Payment screenshot URL
+            },
+            approved: userPlan.state, // Approval status based on the plan state
+            startDate: userPlan.startDate, // User plan start date
+            endDate: userPlan.endDate, // User plan end date
+          },
+          earnings: {
+            totalEarnings: userEarnings.totalEarnings,
+            dailyEarnings: userEarnings.dailyEarnings,
+          }
+        };
+      }));
+  
+      // Send the response with all purchased plans data, including payment screenshots and planId
+      res.status(200).json({
+        message: 'Fetched all purchased plans successfully.',
+        plans: response,
+      });
+    } catch (error) {
+      console.error('Error in getAllPurchasedPlans:', error);
+      res.status(500).json({ message: 'Server error' });
     }
-
-    // Iterate over user plans and prepare the response
-    const response = await Promise.all(userPlans.map(async (userPlan) => {
-      const user = userPlan.userId;
-      const plan = userPlan.planId;
-
-      // Fetch the user's earnings for this plan
-      const userEarnings = await Earnings.findOne({ userId: user._id }) || { totalEarnings: 0, dailyEarnings: [] };
-
-      // Fetch the referrer details (populate referredBy with username)
-      const referrer = user.referredBy ? user.referredBy.username : 'N/A';
-      const referrerName = user.referredBy ? user.referredBy.name : 'N/A';  // Assuming the referredBy has a 'name' field
-
-      // Prepare the response for each user plan, including payment screenshot
-      return {
-        planRequestDetail: {
-          planDetail: {
-            planName: plan.name, // Plan name
-            price: plan.price,
-            duration: plan.duration,
-            dailyProfit: plan.dailyProfit,
-            totalProfit: plan.totalProfit,
-            startDate: plan.startDate, // Plan start date
-            endDate: plan.endDate // Plan end date
-          },
-          userDetail: {
-            username: user.username,
-            referredBy: referrer,  // Referrer's username
-            referrerName: referrerName,  // Referrer's full name
-            paymentGateway: userPlan.paymentGateway, // Payment method
-            planState: userPlan.state, // Plan status (approved, pending, etc.)
-            paymentScreenshot: userPlan.paymentScreenshot, // Payment screenshot URL
-          },
-          approved: userPlan.state, // Approval status based on the plan state
-          startDate: userPlan.startDate, // User plan start date
-          endDate: userPlan.endDate, // User plan end date
-        },
-        earnings: {
-          totalEarnings: userEarnings.totalEarnings,
-          dailyEarnings: userEarnings.dailyEarnings,
-        }
-      };
-    }));
-
-    // Send the response with all purchased plans data, including payment screenshots
-    res.status(200).json({
-      message: 'Fetched all purchased plans successfully.',
-      plans: response,
-    });
-  } catch (error) {
-    console.error('Error in getAllPurchasedPlans:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+  };
+  
 
 
 export const getReferralDetails = async (req, res) => {

@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -44,6 +44,7 @@ import Withdrawl_action from "./components/admin/Withdrawl_action";
 const App = () => {
   const location = useLocation();
   const { authUser } = useAuthContext(); // Access auth state
+  const [unreadCount, setUnreadCount] = useState(0);  // State to manage unread notifications
 
   useEffect(() => {
     AOS.init({ duration: 1500 });
@@ -73,7 +74,7 @@ const App = () => {
   return (
     <div>
       {/* Conditionally render Navbar */}
-      {shouldShowNavbar && <Navbar />}
+      {shouldShowNavbar && <Navbar unreadCount={unreadCount}  />}
 
       <Routes>
         {/* Public Routes */}
@@ -186,14 +187,15 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/notification"
-          element={
-            <ProtectedRoute>
-              <Notification />
-            </ProtectedRoute>
-          }
-        />
+       <Route
+  path="/notification"
+  element={
+    <ProtectedRoute>
+      <Notification setUnreadCount={setUnreadCount} />
+    </ProtectedRoute>
+  }
+/>
+
 
         {/* Admin Routes */}
         <Route

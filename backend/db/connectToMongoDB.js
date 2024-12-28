@@ -1,14 +1,19 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const connectToMongoDB = async () => {
-	try {
-		await mongoose.connect(
-      'mongodb://localhost:27017/goldmine3x?retryWrites=true&w=majority'
-    );
-		console.log('db connection established', mongoose.connection.host)
-	} catch (error) {
-		console.log("Error connecting to MongoDB", error.message);
-	}
+  try {
+    const dbURL = process.env.DB_LOCAL_URL; // Fetch DB URL from .env
+    await mongoose.connect(dbURL, {
+     
+    });
+    console.log("DB connection established on host:", mongoose.connection.host);
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message);
+  }
 };
 
 export default connectToMongoDB;

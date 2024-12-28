@@ -24,8 +24,8 @@ const Recharge_history = () => {
           console.error("Token not available");
           return;
         }
-
-        const response = await axios.get(`http://localhost:5000/api/userplan/${authUser._id}`, {
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${baseURL}/api/userplan/${authUser._id}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
           },

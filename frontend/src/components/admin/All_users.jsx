@@ -24,7 +24,8 @@ const AllUsers = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/userplan/alluser");
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${baseURL}/api/userplan/alluser`);
         if (response.data && Array.isArray(response.data)) {
           setUsers(response.data); // Setting users if the response is correct
         } else {

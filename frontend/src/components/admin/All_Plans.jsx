@@ -22,7 +22,8 @@ const All_Plains = () => {
 
     const fetchPlans = async () => {
         try {
-          const response = await fetch('http://localhost:5000/api/plan/all');  // Replace with your actual API URL
+          const baseURL = import.meta.env.VITE_API_BASE_URL;
+          const response = await fetch(`${baseURL}/api/plan/all`);  // Replace with your actual API URL
           const data = await response.json();
           if (data.plans) {
             setPlans(data.plans);  // Set the fetched plans

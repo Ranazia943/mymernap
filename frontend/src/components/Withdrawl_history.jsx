@@ -18,9 +18,8 @@ const Withdrawl_history = () => {
             console.error("No token found, authorization denied.");
             return;
           }
-
-          const response = await axios.get(
-            `http://localhost:5000/api/withdrawl/${authUser._id}`,
+          const baseURL = import.meta.env.VITE_API_BASE_URL;
+          const response = await axios.get(`${baseURL}/api/withdrawl/${authUser._id}`,
             {
               headers: {
                 "Content-Type": "application/json",

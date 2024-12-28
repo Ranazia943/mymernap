@@ -2,7 +2,6 @@ import express from "express";
 import {
   addPlan,
   fetchAllPlans,
-  updatePlan,
   deletePlan, 
 } from "../controllers/plans.controller.js";
 
@@ -15,7 +14,6 @@ router.post("/add", addPlan);
 router.get("/all", fetchAllPlans);
 
 // Route to Update a Plan
-router.put("/update/:id", updatePlan);
 
 // Route to Delete a Plan
 router.delete("/delete/:id", deletePlan);

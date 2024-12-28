@@ -74,8 +74,8 @@ const WithdrawlAction = () => {
         };
 
         try {
-            const response = await axios.put(
-                `http://localhost:5000/api/withdrawl/response/${id}`,
+            const baseURL = import.meta.env.VITE_API_BASE_URL;
+            const response = await axios.put(`${baseURL}/api/withdrawl/response/${id}`,
                 data
             );
             alert(response.data.message);

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthContext } from "../authcontext/AuthContext"; // Adjust the path if necessary
 import Cookies from "js-cookie"; // Import js-cookie for reading cookies
 
-const Navbar = () => {
+const Navbar = ({ unreadNotifications }) => {  // Accept unreadNotifications as a prop
   const { authUser } = useAuthContext(); // Get the user from context
   const tokenFromCookies = Cookies.get("token"); // Retrieve token from cookies
 
@@ -22,7 +22,13 @@ const Navbar = () => {
             </li>
             <li className="duration-200 hover:text-green-400 hover:-translate-y-1">
               <Link to="/notification" className="flex flex-col items-center">
-                <i className="fa-solid fa-bell text-xl"></i>
+                <i className="fa-solid fa-bell text-xl relative">
+                  {unreadNotifications > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-2">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </i>
                 <span className="font-[300] max-[400px]:text-sm">Notification</span>
               </Link>
             </li>

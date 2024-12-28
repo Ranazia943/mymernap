@@ -32,7 +32,8 @@ const Support = () => {
 
     try {
       // API call to submit the support ticket
-      const response = await fetch("http://localhost:5000/api/support/tickets", {
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${baseURL}/api/support/tickets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

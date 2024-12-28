@@ -29,7 +29,8 @@ const Update_About = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/support/tickets/all"); // Adjust the URL as needed
+        const baseURL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${baseURL}/api/support/tickets/all`); // Adjust the URL as needed
         setTickets(response.data.tickets);
       } catch (err) {
         setError("Failed to fetch support tickets.");
